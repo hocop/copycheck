@@ -15,7 +15,7 @@ fn filter_comment_tokens(tokens: Vec<String>) -> Vec<String> {
 
 /// Check for copy-edit errors in the specified files
 pub fn check_copy_edit_errors(paths: &[PathBuf], window: usize, extensions: Option<&str>,
-                             json: &bool, _ignore_paths: &[PathBuf]) -> Result<(), Box<dyn std::error::Error>> {
+                             json: &bool) -> Result<(), Box<dyn std::error::Error>> {
     // Parse extensions into a set for filtering
     let _ext_set = if let Some(exts) = extensions {
         let exts = exts.split(',').map(|s| s.trim().to_lowercase()).collect::<Vec<_>>();
@@ -25,7 +25,7 @@ pub fn check_copy_edit_errors(paths: &[PathBuf], window: usize, extensions: Opti
     };
 
     // Find all text files to analyze
-    let text_files = find_text_files(paths, extensions, _ignore_paths);
+    let text_files = find_text_files(paths, extensions);
 
     // Analyze each file
     for file_path in text_files {
@@ -55,7 +55,7 @@ pub fn check_copy_edit_errors(paths: &[PathBuf], window: usize, extensions: Opti
 }
 
 /// Helper function to find text files to analyze
-fn find_text_files(paths: &[PathBuf], extensions: Option<&str>, _ignore_paths: &[PathBuf]) -> Vec<PathBuf> {
+fn find_text_files(paths: &[PathBuf], extensions: Option<&str>) -> Vec<PathBuf> {
     let mut text_files = vec![];
 
     for path in paths {
@@ -66,10 +66,6 @@ fn find_text_files(paths: &[PathBuf], extensions: Option<&str>, _ignore_paths: &
         // This implementation may need to change for the ignore feature
         for entry in walk.build().filter_map(Result::ok) {
             let entry_path = entry.path();
-
-            // Check if path should be ignored
-            let _should_ignore = _ignore_paths.iter()
-                .any(|ignore_path| entry_path.starts_with(ignore_path));
 
             // Only process files, not directories
             if entry.file_type().map_or(false, |ft| ft.is_file()) {

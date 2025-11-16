@@ -29,10 +29,6 @@ enum Commands {
         /// Output results as JSON
         #[arg(long)]
         json: bool,
-
-        /// Skip specific folders
-        #[arg(long, value_name = "PATH")]
-        ignore: Vec<PathBuf>,
     },
 }
 
@@ -44,8 +40,8 @@ fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Check { window, extensions, json, ignore } => {
-            if let Err(e) = analysis::check_copy_edit_errors(&cli.paths, *window, extensions.as_deref(), json, ignore) {
+        Commands::Check { window, extensions, json } => {
+            if let Err(e) = analysis::check_copy_edit_errors(&cli.paths, *window, extensions.as_deref(), json) {
                 eprintln!("Error checking copy-edit errors: {}", e);
             }
         }

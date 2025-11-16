@@ -61,15 +61,6 @@ sum2 = a[1] + b[0]  # index mismatch → likely meant b[1]
 copyedit check path/to/source/
 ```
 
-Options:
-
-```
---window N      # number of neighboring lines to compare (default: 5)
---ext .py,.cpp  # file extensions to include (default: all)
---json          # output results as JSON
---ignore tests/ # skip specific folders
-```
-
 Output example:
 
 ```
