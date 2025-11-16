@@ -4,6 +4,15 @@ use ignore::WalkBuilder;
 use std::fs;
 use std::path::PathBuf;
 
+
+/// Filters out tokens that start with comment markers
+fn filter_comment_tokens(tokens: Vec<String>) -> Vec<String> {
+    tokens
+    .into_iter()
+    .take_while(|token| !token.starts_with('#'))
+    .collect()
+}
+
 /// Check for copy-edit errors in the specified files
 pub fn check_copy_edit_errors(paths: &[PathBuf], window: usize, extensions: Option<&str>,
                              json: &bool, _ignore_paths: &[PathBuf]) -> Result<(), Box<dyn std::error::Error>> {
@@ -82,10 +91,7 @@ fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bo
     for (i, line) in lines.iter().enumerate() {
         if let Some((lhs, op, rhs)) = detect_assignment(line) {
             // Filter out comment parts from RHS
-            let rhs: Vec<String> = rhs.iter()
-                .take_while(|token| !token.starts_with('#'))
-                .map(|s| s.to_string())
-                .collect();
+            let rhs: Vec<String> = filter_comment_tokens(rhs);
 
             if lhs.is_empty() || rhs.is_empty() {
                 continue;
@@ -103,10 +109,7 @@ fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bo
                 for j in (i as isize - window as isize).max(0) as usize..i {
                     if let Some((_prev_lhs, _prev_op, prev_rhs)) = detect_assignment(lines[j]) {
                         // Filter out comment parts from previous RHS
-                        let prev_rhs_clean: Vec<String> = prev_rhs.iter()
-                            .take_while(|token| !token.starts_with('#'))
-                            .map(|s| s.to_string())
-                            .collect();
+                        let prev_rhs_clean: Vec<String> = filter_comment_tokens(prev_rhs);
 
                         // Normalize the previous RHS for comparison
                         let prev_norm_rhs = normalize_identifiers(&prev_rhs_clean);
@@ -141,17 +144,11 @@ fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bo
             if pattern_type.is_none() {
                 if i > 0 && i < window + 1 {
                     for j in (i as isize - window as isize).max(0) as usize..i {
-                        if let Some((_prev_lhs, _prev_op, prev_rhs)) = detect_assignment(lines[j]) {
-                            // Filter out comment parts from previous LHS
-                            let prev_lhs_clean: Vec<String> = _prev_lhs.iter()
-                                .take_while(|token| !token.starts_with('#'))
-                                .map(|s| s.to_string())
-                                .collect();
-
+                        if let Some((prev_lhs, prev_op, prev_rhs)) = detect_assignment(lines[j]) {
                             // Normalize the previous LHS for comparison
-                            let prev_norm_lhs = normalize_identifiers(&prev_lhs_clean);
+                            let prev_norm_lhs = normalize_identifiers(&prev_lhs);
 
-                            if prev_lhs_clean.is_empty() {
+                            if prev_lhs.is_empty() {
                                 continue;
                             }
 
@@ -161,9 +158,9 @@ fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bo
                                     pattern_type: PatternType::RepeatedLhs,
                                     line_num: j + 1, // Use the previous line's number for comparison
                                     content: lines[j].to_string(),
-                                    lhs: prev_lhs_clean,
+                                    lhs: prev_lhs.clone(),
                                     rhs: prev_rhs.clone(),
-                                    operators: vec![_prev_op.clone()],
+                                    operators: vec![prev_op.clone()],
                                 });
                                 break;
                             }
