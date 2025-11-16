@@ -11,8 +11,11 @@ pub struct Pattern {
     pub line_num: usize,
     pub content: String,
     // These fields are used in analysis.rs to store tokenized values
+    #[allow(dead_code)]
     pub lhs: Vec<String>,
+    #[allow(dead_code)]
     pub rhs: Vec<String>,
+    #[allow(dead_code)]
     pub operators: Vec<String>,
 }
 
