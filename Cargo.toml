@@ -1,5 +1,5 @@
 [package]
-name = "copyedit-check"
+name = "copyedit"
 version = "0.1.0"
 edition = "2024"
 description = "A CLI tool to detect copy-paste and edit errors across programming languages"

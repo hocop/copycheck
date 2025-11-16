@@ -1,6 +1,6 @@
-# ⚙️ copyedit-check - Detect Copy-Paste and Edit Errors Across Languages
+# ⚙️ copyedit - Detect Copy-Paste and Edit Errors Across Languages
 
-`copyedit-check` is a lightweight, **language-agnostic static analyzer** designed to catch
+`copyedit` is a lightweight, **language-agnostic static analyzer** designed to catch
 _copy-edit mistakes_ that compilers and linters usually miss - small, plausible-looking lines
 that are _syntactically valid_ but _semantically suspicious_.
 
@@ -103,3 +103,4 @@ To run tests:
 
 ```bash
 cargo test
+```
