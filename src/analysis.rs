@@ -1,10 +1,8 @@
 use crate::pattern::{PatternType, normalize_identifiers, detect_assignment, Pattern};
 use crate::utilities::is_text_extension;
 use ignore::WalkBuilder;
-use std::collections::{HashMap, BTreeMap};
 use std::fs;
-use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Check for copy-edit errors in the specified files
 pub fn check_copy_edit_errors(paths: &[PathBuf], window: usize, extensions: Option<&str>,
@@ -22,7 +20,7 @@ pub fn check_copy_edit_errors(paths: &[PathBuf], window: usize, extensions: Opti
 
     // Analyze each file
     for file_path in text_files {
-        println!("Analyzing file: {}", file_path.display());
+        // println!("Analyzing file: {}", file_path.display());
         let content = fs::read_to_string(&file_path)?;
         let result = analyze_file_content(&file_path.display().to_string(), &content, window, json, extensions);
         if let Err(e) = result {
@@ -38,7 +36,7 @@ fn find_text_files(paths: &[PathBuf], extensions: Option<&str>, _ignore_paths: &
     let mut text_files = vec![];
 
     for path in paths {
-        println!("Scanning directory: {}", path.display());
+        // println!("Scanning directory: {}", path.display());
         let walk = WalkBuilder::new(path);
 
         // Add ignore paths - ignoring functionality needs adjustment
@@ -66,7 +64,7 @@ fn find_text_files(paths: &[PathBuf], extensions: Option<&str>, _ignore_paths: &
 
                 if include_file {
                     text_files.push(entry_path.to_path_buf());
-                    println!("Found text file: {}", entry_path.display());
+                    // println!("Found text file: {}", entry_path.display());
                 }
             }
         }
@@ -244,134 +242,8 @@ fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bo
             }
         }
     } else {
-        println!("No issues found in {}", file_path);
+        // println!("No issues found in {}", file_path);
     }
 
     Ok(())
-}
-
-pub fn count_lines(paths: &[PathBuf], extensions: Option<&str>) -> Result<HashMap<String, usize>, Box<dyn std::error::Error>> {
-    // Initialize a BTreeMap to store line counts by file extension
-    let mut counts: BTreeMap<String, usize> = BTreeMap::new();
-
-    // Parse the extensions parameter into a set for efficient lookup
-    let _ext_set = if let Some(exts) = extensions {
-        let exts = exts.split(',').map(|s| s.trim().to_lowercase()).collect::<Vec<_>>();
-        Some(exts)
-    } else {
-        None
-    };
-
-    paths.iter()
-        .flat_map(|path| WalkBuilder::new(path).build().filter_map(Result::ok))
-        .filter(|entry| entry.file_type().map_or(false, |ft| ft.is_file()))
-        .filter_map(|entry| {
-            // Get file extension and convert to lowercase
-            entry.path().extension()
-                .and_then(|os_str| os_str.to_str())
-                .map(|extension| extension.to_lowercase())
-                .map(|extension| (entry, extension))
-        })
-        .filter(|(_entry, extension)| {
-            // Check if this extension is in the allowed set (if any)
-            if let Some(ref _ext_set) = _ext_set {
-                _ext_set.contains(extension)
-            } else {
-                // If no extensions specified, include all
-                is_text_extension(extension)
-            }
-        })
-        // Collect all matching files into a vector for parallel processing
-        .collect::<Vec<_>>()
-        // Try to count lines for each file (skip files that can't be read)
-        .iter()
-        .filter_map(|(entry, extension)| {
-            count_file_lines(entry.path()).ok().map(|count| (extension.clone(), count))
-        })
-        // Collect results and update the counts map
-        .for_each(|(ext, count)| {
-            counts.entry(ext).and_modify(|c| *c += count).or_insert(count);
-        });
-
-    // Convert BTreeMap to HashMap before returning
-    Ok(counts.clone().into_iter().collect())
-}
-
-/// Count lines in a single file
-fn count_file_lines(path: &Path) -> Result<usize, Box<dyn std::error::Error>> {
-    // Use stdio to read line by line, skip empty lines
-    // This is more memory efficient than reading entire file
-    let file = fs::File::open(path)?;
-    let mut count = 0;
-    for line in BufReader::new(file).lines() {
-        let line = line?;
-        if !line.trim().is_empty() {
-            count += 1;
-        }
-    }
-    Ok(count)
-}
-
-pub fn count_file_sizes(paths: &[PathBuf], extensions: Option<&str>) -> Result<HashMap<String, u64>, Box<dyn std::error::Error>> {
-    // Initialize a BTreeMap to store size counts by file extension
-    let mut counts: BTreeMap<String, u64> = BTreeMap::new();
-
-    // Parse the extensions parameter into a set for efficient lookup
-    let _ext_set = if let Some(exts) = extensions {
-        let exts = exts.split(',').map(|s| s.trim().to_lowercase()).collect::<Vec<_>>();
-        Some(exts)
-    } else {
-        None
-    };
-
-    paths.iter()
-        .flat_map(|path| WalkBuilder::new(path).build().filter_map(Result::ok))
-        .filter(|entry| entry.file_type().map_or(false, |ft| ft.is_file()))
-        .filter_map(|entry| {
-            // Get file extension and convert to lowercase
-            entry.path().extension()
-                .and_then(|os_str| os_str.to_str())
-                .or(Some("_"))
-                .map(|extension| extension.to_lowercase())
-                .map(|extension| (entry, extension))
-        })
-        .filter(|(_entry, extension)| {
-            // Check if this extension is in the allowed set (if any)
-            if let Some(ref _ext_set) = _ext_set {
-                _ext_set.contains(extension)
-            } else {
-                // Include all files regardless of extension (unlike count_lines)
-                true
-            }
-        })
-        // Collect all matching files into a vector for parallel processing
-        .collect::<Vec<_>>().iter()
-        // Try to count file size for each file (skip files that can't be read)
-        .filter_map(|(entry, extension)| {
-            count_file_size(entry.path()).map(|size| (extension.clone(), size)).ok()
-        })
-        // Collect results and update the counts map
-        .for_each(|(ext, count)| {
-            let mut found = false;
-            for (k, v) in counts.iter_mut() {
-                if k == &ext {
-                    *v += count;
-                    found = true;
-                    break;
-                }
-            }
-            if !found {
-                counts.insert(ext, count);
-            }
-        });
-
-    // Convert BTreeMap to HashMap before returning
-    Ok(counts.clone().into_iter().collect())
-}
-
-/// Count size of a single file
-fn count_file_size(path: &Path) -> Result<u64, Box<dyn std::error::Error>> {
-    // Use metadata to get file size
-    let metadata = fs::metadata(path)?;
-    Ok(metadata.len())
 }

@@ -34,20 +34,6 @@ enum Commands {
         #[arg(long, value_name = "PATH")]
         ignore: Vec<PathBuf>,
     },
-
-    /// Count lines of code grouped by language
-    Lc {
-        /// Show only these extensions (comma-separated, e.g. rs,py,js)
-        #[arg(long, value_name = "EXTENSIONS")]
-        extensions: Option<String>,
-    },
-
-    /// Count size of files grouped by extension
-    Size {
-        /// Show only these extensions (comma-separated, e.g. rs,py,js)
-        #[arg(long, value_name = "EXTENSIONS")]
-        extensions: Option<String>,
-    },
 }
 
 mod analysis;
@@ -61,16 +47,6 @@ fn main() {
         Commands::Check { window, extensions, json, ignore } => {
             if let Err(e) = analysis::check_copy_edit_errors(&cli.paths, *window, extensions.as_deref(), json, ignore) {
                 eprintln!("Error checking copy-edit errors: {}", e);
-            }
-        }
-        Commands::Lc { extensions } => {
-            if let Err(e) = analysis::count_lines(&cli.paths, extensions.as_deref()) {
-                eprintln!("Error counting lines: {}", e);
-            }
-        }
-        Commands::Size { extensions } => {
-            if let Err(e) = analysis::count_file_sizes(&cli.paths, extensions.as_deref()) {
-                eprintln!("Error counting file sizes: {}", e);
             }
         }
     }
