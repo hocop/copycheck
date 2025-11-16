@@ -31,9 +31,23 @@ pub fn check_copy_edit_errors(paths: &[PathBuf], window: usize, extensions: Opti
     for file_path in text_files {
         // println!("Analyzing file: {}", file_path.display());
         let content = fs::read_to_string(&file_path)?;
-        let result = analyze_file_content(&file_path.display().to_string(), &content, window, json, extensions);
-        if let Err(e) = result {
-            eprintln!("Error analyzing file {}: {}", file_path.display(), e);
+        let patterns = analyze_file_content(&file_path.display().to_string(), &content, window, json, extensions);
+        for pattern in patterns {
+            if *json {
+                // JSON format
+                println!(
+                    "{{ \"file\": \"{}\", \"line\": {}, \"rule\": \"{:?}\", \"code\": \"{} \" }}",
+                    file_path.display(), pattern.line_num,
+                    pattern.pattern_type, pattern.content.trim()
+                );
+            } else {
+                // Plain text format
+                println!(
+                    "{}:{:>4}  [{:?}]  {}",
+                    file_path.display(), pattern.line_num,
+                    pattern.pattern_type, pattern.content.trim()
+                );
+            }
         }
     }
 
@@ -82,8 +96,8 @@ fn find_text_files(paths: &[PathBuf], extensions: Option<&str>, _ignore_paths: &
     text_files
 }
 
-/// Analyze the content of a single file
-fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bool, _extensions: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
+/// Analyze the content of a single file and return detected patterns
+pub fn analyze_file_content(_file_path: &str, content: &str, window: usize, _json: &bool, _extensions: Option<&str>) -> Vec<Pattern> {
     let lines: Vec<&str> = content.lines().collect();
     let mut patterns = vec![];
 
@@ -129,10 +143,6 @@ fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bo
                                 rhs: rhs.clone(),
                                 operators: vec![op.clone()],
                             };
-                            // Use the fields to avoid unused warnings
-                            let _ = pattern.lhs;
-                            let _ = pattern.rhs;
-                            let _ = pattern.operators;
                             patterns.push(pattern);
                             break;
                         }
@@ -186,28 +196,5 @@ fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bo
         }
     }
 
-    // Print the results
-    if !patterns.is_empty() {
-        for pattern in patterns {
-            if *json {
-                // JSON format
-                println!(
-                    "{{ \"file\": \"{}\", \"line\": {}, \"rule\": \"{:?}\", \"code\": \"{} \" }}",
-                    file_path, pattern.line_num,
-                    pattern.pattern_type, pattern.content.trim()
-                );
-            } else {
-                // Plain text format
-                println!(
-                    "{}:{:>4}  [{:?}]  {}",
-                    file_path, pattern.line_num,
-                    pattern.pattern_type, pattern.content.trim()
-                );
-            }
-        }
-    } else {
-        // println!("No issues found in {}", file_path);
-    }
-
-    Ok(())
+    patterns
 }
