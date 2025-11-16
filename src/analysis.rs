@@ -82,24 +82,18 @@ fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bo
     for (i, line) in lines.iter().enumerate() {
         if let Some((lhs, op, rhs)) = detect_assignment(line) {
             // Filter out comment parts from RHS
-            let rhs_clean: Vec<String> = rhs.iter()
+            let rhs: Vec<String> = rhs.iter()
                 .take_while(|token| !token.starts_with('#'))
                 .map(|s| s.to_string())
                 .collect();
 
-            // Filter out comment parts from LHS
-            let lhs_clean: Vec<String> = lhs.iter()
-                .take_while(|token| !token.starts_with('#'))
-                .map(|s| s.to_string())
-                .collect();
-
-            if lhs_clean.is_empty() || rhs_clean.is_empty() {
+            if lhs.is_empty() || rhs.is_empty() {
                 continue;
             }
 
             // Normalize the tokens for semantic comparison
-            let norm_lhs = normalize_identifiers(&lhs_clean);
-            let norm_rhs = normalize_identifiers(&rhs_clean);
+            let norm_lhs = normalize_identifiers(&lhs);
+            let norm_rhs = normalize_identifiers(&rhs);
 
             // Check all rules
             let mut pattern_type = None;
@@ -128,8 +122,8 @@ fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bo
                                 pattern_type: PatternType::IdenticalRhs,
                                 line_num: i + 1,
                                 content: line.to_string(),
-                                lhs: lhs_clean.clone(),
-                                rhs: rhs_clean.clone(),
+                                lhs: lhs.clone(),
+                                rhs: rhs.clone(),
                                 operators: vec![op.clone()],
                             };
                             // Use the fields to avoid unused warnings
@@ -181,13 +175,13 @@ fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bo
             // Rule R5: Self-Assignment
             if pattern_type.is_none() {
                 // Check for self-assignment (same identifier on both LHS and RHS)
-                if lhs_clean == rhs_clean {
+                if lhs == rhs {
                     patterns.push(Pattern {
                         pattern_type: PatternType::SelfAssignment,
                         line_num: i + 1,
                         content: line.to_string(),
-                        lhs: lhs_clean.clone(),
-                        rhs: rhs_clean.clone(),
+                        lhs: lhs.clone(),
+                        rhs: rhs.clone(),
                         operators: vec![op.clone()],
                     });
                 }
