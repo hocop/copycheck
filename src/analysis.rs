@@ -9,7 +9,7 @@ use std::path::PathBuf;
 fn filter_comment_tokens(tokens: Vec<String>) -> Vec<String> {
     tokens
     .into_iter()
-    .take_while(|token| !token.starts_with('#'))
+    .take_while(|token| !(token.starts_with('#') || token.starts_with("//")))
     .collect()
 }
 
