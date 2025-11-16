@@ -181,44 +181,17 @@ fn analyze_file_content(file_path: &str, content: &str, window: usize, json: &bo
             // Rule R5: Self-Assignment
             if pattern_type.is_none() {
                 // Check for self-assignment (same identifier on both LHS and RHS)
-                if let Some(lhs_name) = lhs_clean.get(0) {
-                    if rhs_clean.iter().any(|v| v == lhs_name) {
-                        pattern_type = Some(PatternType::SelfAssignment);
-                        patterns.push(Pattern {
-                            pattern_type: PatternType::SelfAssignment,
-                            line_num: i + 1,
-                            content: line.to_string(),
-                            lhs: lhs_clean.clone(),
-                            rhs: rhs_clean.clone(),
-                            operators: vec![op.clone()],
-                        });
-                    }
+                if lhs_clean == rhs_clean {
+                    patterns.push(Pattern {
+                        pattern_type: PatternType::SelfAssignment,
+                        line_num: i + 1,
+                        content: line.to_string(),
+                        lhs: lhs_clean.clone(),
+                        rhs: rhs_clean.clone(),
+                        operators: vec![op.clone()],
+                    });
                 }
             }
-
-            // Rule R7: Repeated Operand
-            if pattern_type.is_none() {
-                if rhs_clean.len() >= 2 {
-                    if rhs_clean[0] == rhs_clean[1] || lhs_clean.iter().any(|v| v == &rhs_clean[0]) && lhs_clean.iter().any(|v| v == &rhs_clean[1]) {
-                        pattern_type = Some(PatternType::RepeatedOperand);
-                        // Use the pattern_type variable
-                        if let Some(pt) = pattern_type {
-                            patterns.push(Pattern {
-                                pattern_type: pt,
-                                line_num: i + 1,
-                                content: line.to_string(),
-                                lhs: lhs_clean.clone(),
-                                rhs: rhs_clean.clone(),
-                                operators: vec![op.clone()],
-                            });
-                        }
-                    }
-                }
-            }
-
-            // Rule R10: Multi-Increment (disabled for now)
-            // (no changes needed for this disabled rule)
-
         }
     }
 

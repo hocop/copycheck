@@ -3,8 +3,6 @@ pub enum PatternType {
     IdenticalRhs,
     RepeatedLhs,
     SelfAssignment,
-    RepeatedOperand,
-    // MultiIncrement, // Disabled for now due to tokenization issues
 }
 
 #[derive(Debug)]

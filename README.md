@@ -42,17 +42,7 @@ Detects useless or accidental self-assignments.
 x = x  # ⚠️ likely unintended
 ```
 
-### R7 - Repeated Operand (Identity or Null Operation)
-
-Flags operations where both operands are identical.
-
-```python
-diff = x - x  # ⚠️ always 0
-ratio = y / y  # ⚠️ always 1
-mask = a & a   # ⚠️ redundant
-```
-
-### R10 - Multi-Increment / Index Mismatch
+### (todo) R10 - Multi-Increment / Index Mismatch
 
 Detects sequential code where one variable changes but others do not.
 
@@ -71,7 +61,7 @@ sum2 = a[1] + b[0]  # ⚠️ index mismatch → likely meant b[1]
 ## ⚙️ Usage
 
 ```bash
-copyedit-check path/to/source/
+copyedit check path/to/source/
 ```
 
 Options:
@@ -95,12 +85,6 @@ file.py:73  [R7]  diff = x - x — repeated operand
 * Not a parser — works purely by token similarity.
 * May produce false positives in repetitive code (e.g. mathematical constants).
 * Designed for _signal, not certainty_ — human judgment required.
-
-## 🛠️ Future Work
-
-* “Multi-increment error” generalization using token-level alignment.
-* Support for configurable rule thresholds.
-* Integration with pre-commit hooks and CI pipelines.
 
 ## 📚 Implementation Details
 
